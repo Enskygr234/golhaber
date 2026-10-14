@@ -8,6 +8,8 @@
   <a href="docs/golhaber-tanitim.mp4">🎬 Tanıtım videosu</a>
 </p>
 
+<p align="center"><img src="docs/ekran.png" width="300" alt="GolHaber ekranı"></p>
+
 ---
 
 ## Özellikler

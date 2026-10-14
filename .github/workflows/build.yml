@@ -42,6 +42,15 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
           cp app/build/outputs/apk/release/app-release.apk GolHaber.apk
 
+      - name: APK'yı doğrula
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/aapt2" dump badging GolHaber.apk | grep -E "^package|sdkVersion|application-label:"
+          "$BT/apksigner" verify --print-certs GolHaber.apk | head -3
+          unzip -l GolHaber.apk | grep -c "\.ogg" | xargs -I{} sh -c 'echo "ses dosyası: {}"; [ {} -ge 4 ]'
+          unzip -p GolHaber.apk 'classes*.dex' | grep -a -q "CheckWorker" && echo "CheckWorker korunmuş"
+          ls -la GolHaber.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: GolHaber-apk
