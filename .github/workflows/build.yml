@@ -56,10 +56,17 @@ jobs:
           name: GolHaber-apk
           path: GolHaber.apk
 
+      - name: Sürüm numarasını oku
+        id: ver
+        run: echo "name=v$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
       - name: Sürüm yayınla
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         uses: softprops/action-gh-release@v2
         with:
-          name: GolHaber ${{ github.ref_name }}
+          tag_name: ${{ steps.ver.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          name: GolHaber ${{ steps.ver.outputs.name }}
           files: GolHaber.apk
           body_path: docs/RELEASE.md
+          make_latest: true

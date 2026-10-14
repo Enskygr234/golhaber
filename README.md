@@ -65,11 +65,7 @@ Kotlin 2.0 · Jetpack Compose (Material 3) · WorkManager · Coil
 ./gradlew assembleRelease
 ```
 
-Her `main` push'unda GitHub Actions APK'yı derler (Actions → son çalışma → *GolHaber-apk*). `v*` etiketi atıldığında APK otomatik olarak Release'e eklenir:
-
-```bash
-git tag v1.0.1 && git push --tags
-```
+Her `main` push'unda GitHub Actions APK'yı derler ve `app/build.gradle.kts` içindeki `versionName` ile aynı adlı Release'e (ör. `v1.0.0`) yükler. Yeni sürüm için `versionCode` ve `versionName` değerlerini artırıp push etmen yeterli.
 
 ### Kalıcı imza (isteğe bağlı)
 
