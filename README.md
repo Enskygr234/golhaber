@@ -1,16 +1,29 @@
-<p align="center"><img src="docs/icon.png" width="120" alt="GolHaber ikonu"></p>
+<div align="center">
 
-<h1 align="center">GolHaber</h1>
-<p align="center">Canlı futbol skorları ve güncel transfer haberleri — Android</p>
+<img src="docs/icon.png" width="110" alt="GolHaber ikonu">
 
-<p align="center">
-  <a href="../../releases/latest"><b>📥 APK'yı indir</b></a> ·
-  <a href="docs/golhaber-tanitim.mp4">🎬 Tanıtım videosu</a>
-</p>
+# GolHaber
 
-<p align="center"><img src="docs/ekran.png" width="300" alt="GolHaber ekranı"></p>
+**Canlı futbol skorları ve güncel transfer haberleri, Android için.**
 
----
+[![APK indir](https://img.shields.io/badge/⬇_APK_indir-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Enskygr234/golhaber/releases/latest/download/GolHaber.apk)
+[![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+
+<img src="docs/ekran.png" width="280" alt="GolHaber ekranı">
+
+</div>
+
+<!-- ENS:TANITIM -->
+## 🎬 Tanıtım
+
+<div align="center">
+
+<a href="docs/tanitim.mp4"><img src="docs/tanitim.gif" width="720" alt="GolHaber tanıtım videosu"></a>
+
+<sub>Tam kalitede izlemek için görsele tıkla · MP4, 41 saniye</sub>
+
+</div>
+<!-- /ENS:TANITIM -->
 
 ## Özellikler
 
@@ -77,3 +90,19 @@ Her `main` push'unda GitHub Actions APK'yı derler ve `app/build.gradle.kts` iç
 | `KEYSTORE_PASSWORD` | anahtar deposu şifresi |
 | `KEY_ALIAS` | anahtar adı |
 | `KEY_PASSWORD` | anahtar şifresi |
+
+<!-- ENS:ALT -->
+---
+
+<div align="center">
+
+**❄️ ENS Developer'ın diğer projeleri**
+
+📱 Telefon: [Winterball](https://github.com/Enskygr234/Winterball) · [Yemek Tarifleri](https://github.com/Enskygr234/ensdewloper.github.io/tree/main/tarifler)
+
+[🌐 Bütün projeler](https://enskygr234.github.io/ensdewloper.github.io/) · [👤 GitHub profilim](https://github.com/Enskygr234)
+
+<sub>Kış gelir, kod yazılır.</sub>
+
+</div>
+<!-- /ENS:ALT -->
