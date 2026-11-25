@@ -1,5 +1,10 @@
 package com.enskygr.golhaber.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -44,12 +50,27 @@ private data class Tab(val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
     Tab("Skorlar", Icons.Filled.Home),
+    Tab("Puan", Icons.Filled.Star),
     Tab("Transfer", Icons.AutoMirrored.Filled.List),
     Tab("Ayarlar", Icons.Filled.Settings),
 )
 
 @Composable
 fun MainScreen(vm: MainViewModel, onAskPermission: () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+        Tabs(vm, onAskPermission)
+        AnimatedVisibility(
+            visible = vm.openMatchId != null,
+            enter = slideInHorizontally { it } + fadeIn(),
+            exit = slideOutHorizontally { it } + fadeOut(),
+        ) {
+            MatchDetailScreen(vm)
+        }
+    }
+}
+
+@Composable
+private fun Tabs(vm: MainViewModel, onAskPermission: () -> Unit) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     Scaffold(
         containerColor = GH.Bg,
@@ -77,7 +98,8 @@ fun MainScreen(vm: MainViewModel, onAskPermission: () -> Unit) {
         Box(Modifier.padding(pad).fillMaxSize()) {
             when (tab) {
                 0 -> ScoresScreen(vm)
-                1 -> NewsScreen(vm)
+                1 -> TableScreen(vm)
+                2 -> NewsScreen(vm)
                 else -> SettingsScreen(vm, onAskPermission)
             }
         }

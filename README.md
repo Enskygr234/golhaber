@@ -29,9 +29,12 @@
 
 | | |
 |---|---|
-| ⚽ **Canlı skorlar** | Süper Lig, Premier Lig, La Liga, Serie A, Bundesliga, Şampiyonlar Ligi. Canlı maçlar 30 saniyede bir yenilenir. |
+| ⚽ **Canlı skorlar** | Süper Lig, TFF 1. Lig, Premier Lig, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Liga Portugal, Şampiyonlar Ligi, Avrupa Ligi, Konferans Ligi. Canlı maçlar 30 saniyede bir yenilenir. |
+| 📋 **Maç detayı** | Maça dokun: goller, asistler, kartlar, oyuncu değişiklikleri, topla oynama ve şut istatistikleri, ilk 11'ler ve dizilişler, stat ve hakem. |
+| 📊 **Puan durumu** | Her lig için tablo; Avrupa kupası ve küme düşme bölgeleri renkli, favori takımın vurgulu. |
+| 👟 **Gol krallığı** | Liglerin gol ve asist listeleri, penaltı golleri. |
 | 🗓️ **5 günlük fikstür** | Dünden yarına (±2 gün) maçlar, başlama saatleri ve sonuçlar. |
-| 🥅 **Gol detayları** | Golün dakikası, golcü, penaltı (P) ve kendi kalesine (KK) işaretleri. |
+| 🥅 **Gol detayları** | Golün dakikası, golcü, penaltı (P) ve kendi kalesine (KK) işaretleri; kırmızı kartlar maç kartında. |
 | 🔁 **Transfer haberleri** | Gündem, Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor ve Avrupa ligleri için son 7 günün haberleri. |
 | 🔔 **Bildirimler** | Gol, maç sonu ve yeni transfer haberleri. Maç kartındaki 🔔 ile tek maçı takip et ya da favori takım seç. |
 | 🎵 **Özel sesler** | Hakem düdüğü, tribün coşkusu, skorbord zili — uygulamaya gömülü, ayarlardan dinleyip seçebilirsin. |
@@ -48,10 +51,15 @@ Android 8.0 (API 26) ve üzeri gerekir.
 
 | Veri | Kaynak |
 |---|---|
-| Skorlar, golcüler, logolar | ESPN herkese açık skor servisi (`site.api.espn.com/apis/site/v2/sports/soccer/{lig}/scoreboard`) |
+| Skorlar, golcüler, logolar | ESPN skor servisi (`site.api.espn.com/apis/site/v2/sports/soccer/{lig}/scoreboard`) |
+| Maç detayı | ESPN özet servisi (`…/soccer/{lig}/summary?event={maçId}`) |
+| Puan durumu | ESPN (`site.api.espn.com/apis/v2/sports/soccer/{lig}/standings`) |
+| Gol krallığı | ESPN istatistik servisi (`…/soccer/{lig}/statistics`); gelmezse sezonun maç sonuçlarından hesaplanır |
 | Transfer haberleri | Google Haberler RSS (Türkçe, `hl=tr`) |
 
-Lig kodları: `tur.1`, `eng.1`, `esp.1`, `ita.1`, `ger.1`, `uefa.champions`.
+Lig kodları: `tur.1`, `tur.2`, `eng.1`, `esp.1`, `ita.1`, `ger.1`, `fra.1`, `ned.1`, `por.1`, `uefa.champions`, `uefa.europa`, `uefa.europa.conf`.
+
+Bağlantı kopar ya da sunucu meşgul olursa istekler bir kez daha denenir; puan durumu ve gol krallığı birkaç dakika önbellekte tutulur.
 
 ## Bildirimler nasıl çalışır?
 
@@ -64,13 +72,13 @@ Lig kodları: `tur.1`, `eng.1`, `esp.1`, `ita.1`, `ger.1`, `uefa.champions`.
 
 ```
 app/src/main/java/com/enskygr/golhaber/
-├── data/        Modeller, ESPN + RSS istemcileri, ayarlar
+├── data/        Modeller, ESPN (Espn.kt) + RSS istemcileri, ayarlar
 ├── notify/      Bildirim kanalları, arka plan kontrolü (CheckWorker)
-└── ui/          Jetpack Compose ekranları: Skorlar, Transfer, Ayarlar
+└── ui/          Jetpack Compose ekranları: Skorlar, Maç detayı, Puan, Transfer, Ayarlar
 app/src/main/res/raw/   whistle.ogg · crowd.ogg · classic.ogg · chime.ogg
 ```
 
-Kotlin 2.0 · Jetpack Compose (Material 3) · WorkManager · Coil
+Kotlin 2.0 · Android 15 (API 35) hedefli · Jetpack Compose (Material 3) · WorkManager · Coil
 
 ## Kendin derle
 

@@ -129,9 +129,9 @@ fun SettingsScreen(vm: MainViewModel, onAskPermission: () -> Unit) {
         item {
             Card {
                 SectionLabel("Hakkında")
-                Text("GolHaber 1.0", color = GH.Text, fontWeight = FontWeight.Bold)
+                Text("GolHaber 1.1", color = GH.Text, fontWeight = FontWeight.Bold)
                 Text(
-                    "Skorlar: ESPN · Transfer haberleri: Google Haberler. Canlı maç varken arka planda yaklaşık 2 dakikada bir, diğer zamanlarda 15 dakikada bir kontrol edilir.",
+                    "Skorlar, puan durumu, gol krallığı ve maç ayrıntıları: ESPN · Transfer haberleri: Google Haberler. Canlı maç varken arka planda yaklaşık 2 dakikada bir, diğer zamanlarda 15 dakikada bir kontrol edilir.",
                     color = GH.Muted, fontSize = 12.sp,
                 )
             }

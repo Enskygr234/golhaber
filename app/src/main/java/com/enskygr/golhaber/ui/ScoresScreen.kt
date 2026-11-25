@@ -103,6 +103,7 @@ fun ScoresScreen(vm: MainViewModel) {
                                     followed = m.id in vm.followed,
                                     favorite = teamMatches(m.home.name, vm.favoriteTeams) || teamMatches(m.away.name, vm.favoriteTeams),
                                     onFollow = { vm.toggleFollow(m) },
+                                    onOpen = { vm.openMatch(m) },
                                 )
                             }
                         }
@@ -148,8 +149,9 @@ private fun DayRow(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 @Composable
-fun MatchCard(m: Match, followed: Boolean, favorite: Boolean, onFollow: () -> Unit) {
+fun MatchCard(m: Match, followed: Boolean, favorite: Boolean, onFollow: () -> Unit, onOpen: () -> Unit) {
     Surface(
+        onClick = onOpen,
         shape = RoundedCornerShape(18.dp),
         color = GH.Surface,
         border = when {
@@ -162,8 +164,8 @@ fun MatchCard(m: Match, followed: Boolean, favorite: Boolean, onFollow: () -> Un
         Column(Modifier.padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TeamRow(m.home, m, winner = m.state == MatchState.POST && (m.home.score ?: 0) > (m.away.score ?: 0))
-                    TeamRow(m.away, m, winner = m.state == MatchState.POST && (m.away.score ?: 0) > (m.home.score ?: 0))
+                    TeamRow(m.home, m, winner = m.state == MatchState.POST && (m.home.score ?: 0) > (m.away.score ?: 0), reds = m.redCards.count { it.home })
+                    TeamRow(m.away, m, winner = m.state == MatchState.POST && (m.away.score ?: 0) > (m.home.score ?: 0), reds = m.redCards.count { !it.home })
                 }
                 Box(Modifier.width(1.dp).height(48.dp).background(GH.Line))
                 StatusBox(m)
@@ -184,20 +186,25 @@ fun MatchCard(m: Match, followed: Boolean, favorite: Boolean, onFollow: () -> Un
 }
 
 @Composable
-private fun TeamRow(t: TeamSide, m: Match, winner: Boolean) {
+private fun TeamRow(t: TeamSide, m: Match, winner: Boolean, reds: Int) {
     val dim = m.state == MatchState.POST && !winner
     Row(verticalAlignment = Alignment.CenterVertically) {
         TeamLogo(t.logo, t.name, 26.dp)
         HSpace(10)
         Text(
             t.name,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f, fill = false),
             color = if (dim) GH.Muted else GH.Text,
             fontSize = 15.sp,
             fontWeight = if (winner) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        repeat(reds.coerceAtMost(3)) {
+            HSpace(4)
+            Box(Modifier.size(width = 8.dp, height = 11.dp).clip(RoundedCornerShape(2.dp)).background(GH.Live))
+        }
+        Spacer(Modifier.weight(1f))
         if (m.state != MatchState.PRE && m.state != MatchState.CANCELLED) {
             Text(
                 "${t.score ?: 0}",

@@ -7,7 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.enskygr.golhaber.data.DetailRepository
+import com.enskygr.golhaber.data.League
+import com.enskygr.golhaber.data.Leaders
+import com.enskygr.golhaber.data.LeadersRepository
 import com.enskygr.golhaber.data.Leagues
+import com.enskygr.golhaber.data.MatchDetail
+import com.enskygr.golhaber.data.StandingGroup
+import com.enskygr.golhaber.data.StandingsRepository
 import com.enskygr.golhaber.data.Match
 import com.enskygr.golhaber.data.MatchState
 import com.enskygr.golhaber.data.NewsItem
@@ -46,6 +53,36 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var newsError by mutableStateOf<String?>(null)
         private set
 
+    // --- Puan durumu & gol krallığı
+    var tableLeague by mutableStateOf(Leagues.byCode(prefs.tableLeague) ?: Leagues.all.first())
+        private set
+    /** 0 = puan tablosu, 1 = gol krallığı */
+    var tableMode by mutableIntStateOf(0)
+        private set
+    var standings by mutableStateOf<List<StandingGroup>>(emptyList())
+        private set
+    var standingsLoading by mutableStateOf(false)
+        private set
+    var standingsError by mutableStateOf<String?>(null)
+        private set
+    var leaders by mutableStateOf<Leaders?>(null)
+        private set
+    var leadersLoading by mutableStateOf(false)
+        private set
+    var leadersError by mutableStateOf<String?>(null)
+        private set
+
+    // --- Maç detayı
+    var openMatchId by mutableStateOf<String?>(null)
+        private set
+    private var openMatchSnapshot: Match? = null
+    var detail by mutableStateOf<MatchDetail?>(null)
+        private set
+    var detailLoading by mutableStateOf(false)
+        private set
+    var detailError by mutableStateOf<String?>(null)
+        private set
+
     // --- Ayarlar (Compose için durum kopyaları)
     var goalMode by mutableIntStateOf(prefs.goalMode)
         private set
@@ -66,6 +103,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private var scoresJob: Job? = null
     private var newsJob: Job? = null
+    private var standingsJob: Job? = null
+    private var leadersJob: Job? = null
+    private var detailJob: Job? = null
 
     init {
         refreshScores()
@@ -128,6 +168,107 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    // ---------------- Puan durumu
+
+    /** Puan sekmesi ilk açıldığında ya da lig/mod değişince çağrılır. */
+    fun ensureTable() {
+        if (tableMode == 0 && standings.isEmpty() && !standingsLoading) refreshStandings()
+        if (tableMode == 1 && leaders == null && !leadersLoading) refreshLeaders()
+    }
+
+    fun selectTableLeague(lg: League) {
+        if (lg == tableLeague) return
+        tableLeague = lg
+        prefs.tableLeague = lg.code
+        standings = emptyList(); standingsError = null
+        leaders = null; leadersError = null
+        standingsJob?.cancel(); leadersJob?.cancel()
+        standingsLoading = false; leadersLoading = false
+        ensureTable()
+    }
+
+    fun selectTableMode(mode: Int) {
+        tableMode = mode
+        ensureTable()
+    }
+
+    fun refreshStandings() {
+        standingsJob?.cancel()
+        val lg = tableLeague
+        standingsJob = viewModelScope.launch {
+            standingsLoading = true
+            try {
+                standings = StandingsRepository.fetch(lg)
+                standingsError = if (standings.isEmpty()) "Bu lig için puan durumu henüz yayınlanmadı." else null
+            } catch (e: Exception) {
+                standingsError = "Puan durumu yüklenemedi. İnternet bağlantını kontrol et."
+            } finally {
+                standingsLoading = false
+            }
+        }
+    }
+
+    fun refreshLeaders() {
+        leadersJob?.cancel()
+        val lg = tableLeague
+        leadersJob = viewModelScope.launch {
+            leadersLoading = true
+            try {
+                val l = LeadersRepository.fetch(lg)
+                leaders = l
+                leadersError = if (l.scorers.isEmpty()) "Bu sezon henüz gol listesi oluşmadı." else null
+            } catch (e: Exception) {
+                leadersError = "Gol krallığı yüklenemedi. İnternet bağlantını kontrol et."
+            } finally {
+                leadersLoading = false
+            }
+        }
+    }
+
+    // ---------------- Maç detayı
+
+    /** Açık maçın en güncel hali: skor listesi yenilendikçe değişir. */
+    val currentMatch: Match?
+        get() {
+            val id = openMatchId ?: return null
+            return matches.firstOrNull { it.id == id } ?: openMatchSnapshot
+        }
+
+    fun openMatch(m: Match) {
+        openMatchId = m.id
+        openMatchSnapshot = m
+        detail = null
+        detailError = null
+        detailJob?.cancel()
+        detailJob = viewModelScope.launch {
+            var first = true
+            while (true) {
+                val cur = currentMatch ?: break
+                if (first) detailLoading = true
+                try {
+                    detail = DetailRepository.fetch(cur.league, cur.id, live = cur.isLive)
+                    detailError = null
+                } catch (e: Exception) {
+                    if (first) detailError = "Maç ayrıntıları yüklenemedi."
+                } finally {
+                    detailLoading = false
+                }
+                first = false
+                if (!cur.isLive) break
+                delay(30_000)
+            }
+        }
+    }
+
+    fun closeMatch() {
+        detailJob?.cancel()
+        openMatchId = null
+        openMatchSnapshot = null
+        detail = null
+    }
+
+    fun retryDetail() { currentMatch?.let { openMatch(it) } }
 
     fun toggleFollow(m: Match) {
         val s = followed.toMutableSet()
