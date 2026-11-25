@@ -22,15 +22,53 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 object Http {
-    fun get(url: String): String {
+    private const val UA = "Mozilla/5.0 (Linux; Android) GolHaber/1.1"
+
+    /** Kısa ömürlü bellek önbelleği: aynı adresi saniyeler içinde tekrar çekmemek için. */
+    private val cache = object : LinkedHashMap<String, Pair<Long, String>>(32, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Long, String>>?) = size > 40
+    }
+
+    /**
+     * [maxAgeMs] > 0 ise o süre içinde çekilmiş yanıt tekrar kullanılır.
+     * Bağlantı hatası ya da 5xx/429 olursa bir kez daha denenir.
+     */
+    fun get(url: String, maxAgeMs: Long = 0): String {
+        if (maxAgeMs > 0) {
+            synchronized(cache) { cache[url] }?.let { (t, body) ->
+                if (System.currentTimeMillis() - t < maxAgeMs) return body
+            }
+        }
+        var last: IOException? = null
+        repeat(2) { attempt ->
+            try {
+                val body = fetchOnce(url)
+                if (maxAgeMs > 0) synchronized(cache) { cache[url] = System.currentTimeMillis() to body }
+                return body
+            } catch (e: RetryableException) {
+                last = e
+            } catch (e: IOException) {
+                if (e is HttpException) throw e
+                last = e
+            }
+            if (attempt == 0) Thread.sleep(700)
+        }
+        throw last ?: IOException("Bağlantı hatası")
+    }
+
+    private class RetryableException(msg: String) : IOException(msg)
+    class HttpException(val code: Int) : IOException("HTTP $code")
+
+    private fun fetchOnce(url: String): String {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 10_000
-        c.readTimeout = 15_000
-        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) GolHaber/1.0")
+        c.readTimeout = 20_000
+        c.setRequestProperty("User-Agent", UA)
         c.setRequestProperty("Accept-Language", "tr-TR,tr;q=0.9")
         try {
             val code = c.responseCode
-            if (code !in 200..299) throw IOException("HTTP $code")
+            if (code == 429 || code >= 500) throw RetryableException("HTTP $code")
+            if (code !in 200..299) throw HttpException(code)
             return c.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
         } finally {
             c.disconnect()
@@ -68,8 +106,9 @@ object ScoreRepository {
     }
 
     private fun fetchLeague(lg: League, date: LocalDate): List<Match> {
-        val url = "https://site.api.espn.com/apis/site/v2/sports/soccer/${lg.code}/scoreboard?dates=${date.format(dateFmt)}"
-        val json = JSONObject(Http.get(url))
+        val url = "${Espn.SITE}/${lg.code}/scoreboard?dates=${date.format(dateFmt)}"
+        // Bugünün maçları canlı olabilir: önbellek yok. Geçmiş/gelecek günler 2 dk tutulur.
+        val json = JSONObject(Http.get(url, maxAgeMs = if (date == LocalDate.now()) 0 else 120_000))
         val events = json.optJSONArray("events") ?: return emptyList()
         return (0 until events.length()).mapNotNull { i ->
             runCatching { parseEvent(events.getJSONObject(i), lg) }.getOrNull()
@@ -84,7 +123,7 @@ object ScoreRepository {
         }
     }
 
-    private fun parseEvent(e: JSONObject, lg: League): Match? {
+    internal fun parseEvent(e: JSONObject, lg: League): Match? {
         val comp = e.optJSONArray("competitions")?.optJSONObject(0) ?: return null
         val comps = comp.optJSONArray("competitors") ?: return null
         var home: TeamSide? = null
@@ -131,9 +170,18 @@ object ScoreRepository {
         }
 
         val goals = mutableListOf<Goal>()
+        val reds = mutableListOf<CardEvent>()
         comp.optJSONArray("details")?.let { details ->
             for (k in 0 until details.length()) {
                 val d = details.optJSONObject(k) ?: continue
+                if (d.optBoolean("redCard")) {
+                    val a = d.optJSONArray("athletesInvolved")?.optJSONObject(0)
+                    reds += CardEvent(
+                        minute = d.optJSONObject("clock")?.optString("displayValue").orEmpty(),
+                        player = a?.optString("shortName")?.ifBlank { null } ?: a?.optString("displayName").orEmpty(),
+                        home = d.optJSONObject("team")?.optString("id").orEmpty() == homeSide.id,
+                    )
+                }
                 if (!d.optBoolean("scoringPlay")) continue
                 val teamId = d.optJSONObject("team")?.optString("id").orEmpty()
                 goals += Goal(
@@ -157,6 +205,7 @@ object ScoreRepository {
             home = homeSide,
             away = awaySide,
             goals = goals,
+            redCards = reds,
         )
     }
 }

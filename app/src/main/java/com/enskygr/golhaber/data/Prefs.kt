@@ -40,8 +40,13 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putStringSet("followed", v.toSet()).apply()
 
     var leagues: Set<String>
-        get() = sp.getStringSet("leagues", null)?.toSet() ?: Leagues.all.map { it.code }.toSet()
+        get() = sp.getStringSet("leagues", null)?.toSet() ?: Leagues.defaults
         set(v) = sp.edit().putStringSet("leagues", v.toSet()).apply()
+
+    /** Puan durumu sekmesinde en son bakılan lig. */
+    var tableLeague: String
+        get() = sp.getString("tableLeague", "tur.1") ?: "tur.1"
+        set(v) = sp.edit().putString("tableLeague", v).apply()
 
     /** maçId -> "ev-dep|DURUM" */
     var lastScores: Map<String, String>
